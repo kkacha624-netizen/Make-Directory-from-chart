@@ -1,0 +1,12 @@
+# Generated during local testing
+test/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.tmp
