@@ -1,0 +1,24 @@
+experiments/
+├─ README.md
+├─ exp001_baseline_resnet18/
+│  ├─ config.yaml
+│  ├─ result.md
+│  ├─ metrics.csv
+│  ├─ logs/
+│  └─ figures/
+├─ exp002_extract_misclassified/
+│  ├─ config.yaml
+│  ├─ result.md
+│  ├─ misclassified_samples.csv
+│  ├─ correct_samples.csv
+│  ├─ logs/
+│  └─ figures/
+└─ exp003_gradcam_misclassified/
+   ├─ config.yaml
+   ├─ result.md
+   ├─ gradcam_results.csv
+   ├─ logs/
+   └─ figures/
+      ├─ originals/
+      ├─ heatmaps/
+      └─ overlays/
