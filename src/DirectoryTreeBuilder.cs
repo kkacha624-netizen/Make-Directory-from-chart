@@ -250,6 +250,10 @@ namespace DirectoryTreeBuilder
     {
         private static readonly Regex BranchPattern =
             new Regex(@"^(?<prefix>[│\s]*)(?:├─+|└─+)\s*(?<name>.+)$", RegexOptions.Compiled);
+        private static readonly Regex AsciiBranchPattern =
+            new Regex(@"^(?<prefix>[|\s]*)(?:\+--|`--|\\--)\s*(?<name>.+)$", RegexOptions.Compiled);
+        private static readonly Regex IndentedLinePattern =
+            new Regex(@"^(?<indent>\s+)(?:[-*]\s+)?(?<name>\S.*)$", RegexOptions.Compiled);
 
         public static List<TreeEntry> Parse(string diagram)
         {
@@ -273,6 +277,31 @@ namespace DirectoryTreeBuilder
                     var prefix = match.Groups["prefix"].Value;
                     depth = (prefix.Length / 3) + 1;
                     name = match.Groups["name"].Value.Trim();
+                }
+                else
+                {
+                    match = AsciiBranchPattern.Match(line);
+                    if (match.Success)
+                    {
+                        var prefix = match.Groups["prefix"].Value;
+                        depth = (prefix.Length / 3) + 1;
+                        name = match.Groups["name"].Value.Trim();
+                    }
+                    else
+                    {
+                        match = IndentedLinePattern.Match(line);
+                        if (match.Success)
+                        {
+                            var indent = match.Groups["indent"].Value.Replace("\t", "  ");
+                            depth = indent.Length / 2;
+                            name = match.Groups["name"].Value.Trim();
+                        }
+                        else if (line.Contains("/") || line.Contains("\\"))
+                        {
+                            AddPathEntries(entries, line.Trim());
+                            continue;
+                        }
+                    }
                 }
 
                 var isDirectory = name.EndsWith("/", StringComparison.Ordinal) ||
@@ -303,6 +332,39 @@ namespace DirectoryTreeBuilder
             }
 
             return entries;
+        }
+
+        private static void AddPathEntries(List<TreeEntry> entries, string pathLine)
+        {
+            var isDirectory = pathLine.EndsWith("/", StringComparison.Ordinal) ||
+                              pathLine.EndsWith("\\", StringComparison.Ordinal);
+            var parts = pathLine
+                .TrimEnd('/', '\\')
+                .Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (var index = 0; index < parts.Length; index++)
+            {
+                var cleanName = parts[index].Trim();
+                if (string.IsNullOrWhiteSpace(cleanName))
+                {
+                    continue;
+                }
+
+                if (cleanName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                {
+                    throw new InvalidOperationException("使用できない文字を含む名前があります: " + cleanName);
+                }
+
+                var depth = index;
+                var currentIsDirectory = index < parts.Length - 1 || isDirectory;
+
+                entries.Add(new TreeEntry
+                {
+                    Depth = depth,
+                    Name = cleanName,
+                    IsDirectory = currentIsDirectory
+                });
+            }
         }
     }
 
